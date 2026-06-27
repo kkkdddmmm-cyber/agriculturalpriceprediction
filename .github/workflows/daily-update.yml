@@ -1,0 +1,62 @@
+name: daily-update
+
+# ── 매일 자동 실행 ──
+# GitHub Actions 의 cron 은 UTC 기준입니다.
+# 한국시간(KST) 23:00 = UTC 14:00  →  '0 14 * * *'
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch:        # 깃허브 Actions 탭에서 수동 실행도 가능
+
+# 결과 파일을 저장소에 다시 커밋하려면 쓰기 권한이 필요합니다.
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 의존성 설치
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ── 1) 데이터 수집: CSV 에 어제 실제값 추가 ──
+      - name: api.py 실행 (데이터 수집)
+        env:
+          KAMIS_KEY:    ${{ secrets.KAMIS_KEY }}
+          KAMIS_ID:     ${{ secrets.KAMIS_ID }}
+          WEATHER_KEY:  ${{ secrets.WEATHER_KEY }}
+          OPINET_KEY:   ${{ secrets.OPINET_KEY }}
+          GARAK_ID:     ${{ secrets.GARAK_ID }}
+          GARAK_PASSWD: ${{ secrets.GARAK_PASSWD }}
+        run: python api.py
+
+      # ── 2) 모델 실행: 실제값 백필 + 내일 예측 + json/joblib 갱신 ──
+      #     (반드시 api.py 다음에 실행되어야 백필이 동작합니다)
+      - name: 최종_모델.py 실행 (예측/백필)
+        run: python "최종_모델.py"
+
+      # ── 3) 변경된 데이터/모델 파일을 저장소에 다시 커밋 ──
+      - name: 결과 커밋 & 푸시
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add 보관/ models/ || true
+          if git diff --staged --quiet; then
+            echo "변경 사항 없음 — 커밋 생략"
+          else
+            git commit -m "🤖 daily update: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
