@@ -10,5 +10,5 @@ scikit-learn
 xgboost
 lightgbm
 shap
-FinanceDataReader
+finance-datareader
 python-dotenv
