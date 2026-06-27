@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+plotly
+matplotlib
+Pillow
+requests
+joblib
+scikit-learn
+xgboost
+lightgbm
+shap
+FinanceDataReader
+python-dotenv
