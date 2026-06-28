@@ -63,16 +63,9 @@ def get_path(filename):
     if os.path.exists(f"data/{filename}"): return f"data/{filename}"
     return BASE_PATH + filename
  
-api_status = "파일 없음 (main.py)"
-try:
-    if os.path.exists(BASE_PATH + 'main.py'):
-        import sys
-        sys.path.insert(0, BASE_PATH)
-        from main import AgriculturalDataEngine
-        api_engine = AgriculturalDataEngine()
-        api_status = "연결 성공"
-except Exception as e:
-    api_status = f"연결 에러: {str(e)}"
+# 데이터 수집·학습은 매일 GitHub Actions 가 자동으로 수행하므로
+# 앱에서는 별도의 엔진 연결 없이 자동 갱신 상태로 표시한다.
+api_status = "자동 갱신 (매일 23시)"
  
 CROP_FILES = {
     "배추":  {
